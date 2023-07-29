@@ -6,46 +6,47 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ToDoListView: View {
     
     @State private var sheetIsPresented = false
-    @EnvironmentObject var toDosVM: ToDosViewModel
+    
+    // @Query gets data from the Data container
+    @Query var toDos: [ToDo]
+    @Environment(\.modelContext) var modelContext // object peforms crud on DataModels in the .modelContainer in app file
     
     var body: some View {
         
         NavigationStack {
             List {
-                ForEach(toDosVM.toDos){ toDo in
+                ForEach(toDos){ toDo in
                    
                     HStack {
                         Image(systemName: toDo.isCompleted ? "checkmark.rectangle" : "rectangle")
                             .onTapGesture {
-                                toDosVM.toggleCompleted(toDo: toDo)
+                                toDo.isCompleted.toggle()
                             }
                         NavigationLink {
                             DetailView(toDo: toDo)
                         } label: {
                             Text(toDo.item)
                         }
+                    }
                     .font(.title2)
+                    .swipeActions {
+                        Button("Delete", role: .destructive) {
+                            modelContext.delete(toDo)
+                        }
                     }
                 }
-                .onDelete { indexSet in
-                    toDosVM.deleteToDo(indexSet: indexSet)
-                }
-                .onMove { fromOffsets, toOffset in
-                    toDosVM.moveToDo(fromOffsets: fromOffsets, toOffset: toOffset)
-                }
+    
             }
             .navigationTitle("To Do List")
             .navigationBarTitleDisplayMode(.automatic)
             .listStyle(.plain)
             .toolbar {
                 
-                ToolbarItem(placement: .navigationBarLeading) {
-                    EditButton()
-                }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -66,9 +67,6 @@ struct ToDoListView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ToDoListView()
-            .environmentObject(ToDosViewModel())
-    }
+#Preview {
+    ToDoListView()
 }
